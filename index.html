@@ -601,9 +601,12 @@ async function handleNotifToggle(cb) {
 }
 function scheduleReminders() {
   clearTimers();
+  const now = Date.now();
   GAMES.forEach(g => {
-    const delay = new Date(g.ko).getTime() - REMIND_MIN*60000 - Date.now();
-    if(delay > 0) {
+    const remindAt = new Date(g.ko).getTime() - REMIND_MIN * 60000;
+    const delay = remindAt - now;
+    // Only schedule if reminder is in the future AND game hasn't started yet
+    if(delay > 0 && minsUntil(g.ko) > 0) {
       const tid = setTimeout(() => {
         const h = lang==='de'?g.home:g.homeEn, a = lang==='de'?g.away:g.awayEn;
         new Notification('⚽ ' + h + ' vs ' + a, {body: lang==='de'?'Spiel beginnt in 30 Min!':'Game starts in 30 min!'});
