@@ -60,7 +60,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .score-box.live-score{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:var(--red);}
 .score-sep{font-size:20px;font-weight:700;color:var(--text3);}
 .tipp-row{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
-.tipp-label{font-size:12px;color:var(--text3);font-weight:600;}
+.tipp-label{font-size:14px;color:var(--text2);font-weight:600;}
 .tipp-input{width:38px;height:38px;text-align:center;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;-moz-appearance:textfield;}
 .tipp-input::-webkit-outer-spin-button,.tipp-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .tipp-input:focus{outline:none;border-color:var(--gold);}
@@ -72,7 +72,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .pts-0{background:rgba(255,255,255,.05);color:var(--text3);}
 .locked-msg{font-size:12px;color:var(--gold);margin-top:6px;text-align:center;}
 .others-tips{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
-.other-tip-pill{font-size:12px;background:var(--bg3);border-radius:20px;padding:3px 8px;color:var(--text2);}
+.other-tip-pill{font-size:14px;font-weight:600;background:var(--bg4);border:1px solid var(--border2);border-radius:20px;padding:5px 12px;color:var(--text);}
 .podium{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.5rem;}
 .podium-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1rem;text-align:center;}
 .podium-card.p1{border-color:var(--gold);background:rgba(240,180,41,.06);}
@@ -340,6 +340,11 @@ function startSession(name, pin) {
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('user-badge').textContent = '👤 ' + name;
   document.getElementById('profil-current').textContent = name;
+  // Always default to "Tippen" tab
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-tippen').classList.add('active');
+  document.querySelector('.nav-btn').classList.add('active');
   renderGames();
   renderRangliste();
   smartRefresh();
@@ -552,25 +557,34 @@ async function changeName() {
 
 // ══ LIVE RESULTS ═════════════════════════════════════════════════════
 async function fetchResults() {
-  const needsUpdate = GAMES.filter(g => { const m=-minsUntil(g.ko); const r=db.results[g.id]; return m>90&&(!r||r.status!=='FINISHED'); });
+  const needsUpdate = GAMES.filter(g => { const m=-minsUntil(g.ko); const r=db.results[g.id]; return m>100&&(!r||r.status!=='FINISHED'); });
   if(!needsUpdate.length) return;
-  try {
-    const res = await fetch('https://www.thesportsdb.com/api/v1/json/3/eventsseason.php?id=4328&s=2026-2027');
-    if(!res.ok) return;
-    const data = await res.json();
-    const events = data.events || [];
-    let changed = false;
-    for(const g of needsUpdate) {
-      const ev = events.find(e => (e.strHomeTeam||'').toLowerCase().includes(g.homeEn.toLowerCase().split(' ')[0]) || g.homeEn.toLowerCase().includes((e.strHomeTeam||'').toLowerCase().split(' ')[0]));
-      if(ev && ev.strStatus==='Match Finished' && ev.intHomeScore!==null && ev.intHomeScore!=='') {
-        db.results[g.id] = {h:parseInt(ev.intHomeScore)||0, a:parseInt(ev.intAwayScore)||0, status:'FINISHED'};
-        changed = true;
+  const dates = [...new Set(needsUpdate.map(g => new Date(g.ko).toISOString().split('T')[0]))];
+  let changed = false;
+  for(const date of dates) {
+    try {
+      const res = await fetch('https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d='+date+'&s=Soccer');
+      if(!res.ok) continue;
+      const data = await res.json();
+      const events = data.events || [];
+      for(const g of needsUpdate) {
+        if(new Date(g.ko).toISOString().split('T')[0] !== date) continue;
+        const ev = events.find(e => {
+          const home=(e.strHomeTeam||'').toLowerCase(), away=(e.strAwayTeam||'').toLowerCase();
+          const gHome=g.homeEn.toLowerCase(), gAway=g.awayEn.toLowerCase();
+          return (home.includes(gHome.split(' ')[0])||gHome.includes(home.split(' ')[0])) &&
+                 (away.includes(gAway.split(' ')[0])||gAway.includes(away.split(' ')[0]));
+        });
+        if(ev && ev.intHomeScore!==null && ev.intHomeScore!=='' && (ev.strStatus==='Match Finished'||ev.strStatus==='FT')) {
+          db.results[g.id] = {h:parseInt(ev.intHomeScore)||0, a:parseInt(ev.intAwayScore)||0, status:'FINISHED'};
+          changed = true;
+        }
       }
-    }
-    if(changed) { await ghSave(); renderGames(); renderRangliste(); }
-    const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('update-bar').textContent = '✓ Aktualisiert: ' + now;
-  } catch(e) { document.getElementById('update-bar').textContent = 'Ergebnisse werden ab WM-Start geladen'; }
+    } catch(e) {}
+  }
+  if(changed) { try { await ghSave(); renderGames(); renderRangliste(); } catch(e) {} }
+  const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('update-bar').textContent = '✓ Aktualisiert: ' + now;
 }
 
 function smartRefresh() {
