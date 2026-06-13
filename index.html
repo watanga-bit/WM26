@@ -559,29 +559,27 @@ async function changeName() {
 async function fetchResults() {
   const needsUpdate = GAMES.filter(g => { const m=-minsUntil(g.ko); const r=db.results[g.id]; return m>100&&(!r||r.status!=='FINISHED'); });
   if(!needsUpdate.length) return;
-  const dates = [...new Set(needsUpdate.map(g => new Date(g.ko).toISOString().split('T')[0]))];
   let changed = false;
-  for(const date of dates) {
-    try {
-      const res = await fetch('https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d='+date+'&s=Soccer');
-      if(!res.ok) continue;
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+    if(res.ok) {
       const data = await res.json();
-      const events = data.events || [];
+      const matches = data.matches || [];
       for(const g of needsUpdate) {
-        if(new Date(g.ko).toISOString().split('T')[0] !== date) continue;
-        const ev = events.find(e => {
-          const home=(e.strHomeTeam||'').toLowerCase(), away=(e.strAwayTeam||'').toLowerCase();
-          const gHome=g.homeEn.toLowerCase(), gAway=g.awayEn.toLowerCase();
-          return (home.includes(gHome.split(' ')[0])||gHome.includes(home.split(' ')[0])) &&
-                 (away.includes(gAway.split(' ')[0])||gAway.includes(away.split(' ')[0]));
+        const gHome = g.homeEn.toLowerCase();
+        const gAway = g.awayEn.toLowerCase();
+        const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
+        const m = matches.find(m => {
+          const t1=(m.team1||'').toLowerCase(), t2=(m.team2||'').toLowerCase();
+          return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
         });
-        if(ev && ev.intHomeScore!==null && ev.intHomeScore!=='' && (ev.strStatus==='Match Finished'||ev.strStatus==='FT')) {
-          db.results[g.id] = {h:parseInt(ev.intHomeScore)||0, a:parseInt(ev.intAwayScore)||0, status:'FINISHED'};
+        if(m && m.score && m.score.ft) {
+          db.results[g.id] = {h:m.score.ft[0], a:m.score.ft[1], status:'FINISHED'};
           changed = true;
         }
       }
-    } catch(e) {}
-  }
+    }
+  } catch(e) {}
   if(changed) { try { await ghSave(); renderGames(); renderRangliste(); } catch(e) {} }
   const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('update-bar').textContent = '✓ Aktualisiert: ' + now;
