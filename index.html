@@ -347,6 +347,7 @@ function startSession(name, pin) {
   document.querySelector('.nav-btn').classList.add('active');
   renderGames();
   renderRangliste();
+  fetchResults();
   smartRefresh();
 }
 
@@ -556,30 +557,57 @@ async function changeName() {
 }
 
 // ══ LIVE RESULTS ═════════════════════════════════════════════════════
+const FD_TOKEN = 'f91779ce91274cebb3adb09f6a219752';
+
 async function fetchResults() {
-  const needsUpdate = GAMES.filter(g => { const m=-minsUntil(g.ko); const r=db.results[g.id]; return m>100&&(!r||r.status!=='FINISHED'); });
+  const needsUpdate = GAMES.filter(g => { const r=db.results[g.id]; return minsUntil(g.ko)<0 && (!r||r.status!=='FINISHED'); });
   if(!needsUpdate.length) return;
   let changed = false;
+  // Primary: football-data.org
   try {
-    const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+    const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {headers:{'X-Auth-Token':FD_TOKEN}});
     if(res.ok) {
       const data = await res.json();
       const matches = data.matches || [];
+      const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
       for(const g of needsUpdate) {
         const gHome = g.homeEn.toLowerCase();
         const gAway = g.awayEn.toLowerCase();
-        const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
         const m = matches.find(m => {
-          const t1=(m.team1||'').toLowerCase(), t2=(m.team2||'').toLowerCase();
+          const t1=(m.homeTeam?.name||'').toLowerCase(), t2=(m.awayTeam?.name||'').toLowerCase();
           return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
         });
-        if(m && m.score && m.score.ft) {
-          db.results[g.id] = {h:m.score.ft[0], a:m.score.ft[1], status:'FINISHED'};
+        if(m && m.status==='FINISHED' && m.score?.fullTime?.home!==null) {
+          db.results[g.id] = {h:m.score.fullTime.home, a:m.score.fullTime.away, status:'FINISHED'};
           changed = true;
         }
       }
     }
   } catch(e) {}
+  // Fallback: openfootball worldcup.json (for games not yet covered above)
+  const stillMissing = GAMES.filter(g => { const r=db.results[g.id]; return minsUntil(g.ko)<0 && (!r||r.status!=='FINISHED'); });
+  if(stillMissing.length) {
+    try {
+      const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
+      if(res.ok) {
+        const data = await res.json();
+        const matches = data.matches || [];
+        const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
+        for(const g of stillMissing) {
+          const gHome = g.homeEn.toLowerCase();
+          const gAway = g.awayEn.toLowerCase();
+          const m = matches.find(m => {
+            const t1=(m.team1||'').toLowerCase(), t2=(m.team2||'').toLowerCase();
+            return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
+          });
+          if(m && m.score && m.score.ft) {
+            db.results[g.id] = {h:m.score.ft[0], a:m.score.ft[1], status:'FINISHED'};
+            changed = true;
+          }
+        }
+      }
+    } catch(e) {}
+  }
   if(changed) { try { await ghSave(); renderGames(); renderRangliste(); } catch(e) {} }
   const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('update-bar').textContent = '✓ Aktualisiert: ' + now;
