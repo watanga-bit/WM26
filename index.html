@@ -286,7 +286,7 @@ let saving = false;
 
 // ══ GITHUB DB ════════════════════════════════════════════════════════
 async function ghGet() {
-  const r = await fetch(GH_API + '?_=' + Date.now(), {headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json','Cache-Control':'no-cache'}, cache:'no-store'});
+  const r = await fetch(GH_API + '?_=' + Date.now(), {headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json'}});
   const d = await r.json();
   dbSha = d.sha;
   db = JSON.parse(atob(d.content.replace(/\n/g,'')));
