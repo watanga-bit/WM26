@@ -42,6 +42,8 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .onboard-note{font-size:13px;color:var(--text3);margin-top:1rem;line-height:1.6;text-align:center;}
 .error-msg{color:var(--red);font-size:13px;margin-top:8px;text-align:center;min-height:18px;}
 .game-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.game-card.today{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold), 0 4px 16px rgba(240,180,41,.15);}
+.today-badge{background:var(--gold);color:#0a0f1e;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:.08em;padding:2px 8px;border-radius:4px;margin-left:auto;text-transform:uppercase;}
 .game-card-header{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--border);}
 .grp-pill{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:.1em;padding:2px 8px;border-radius:4px;flex-shrink:0;}
 .game-meta{font-size:14px;color:var(--text2);font-weight:500;}
@@ -491,6 +493,11 @@ function renderGames() {
     const aName = lang==='de' ? g.away : g.awayEn;
     const cName = lang==='de' ? g.city : g.cityEn;
     const koFmt = new Date(g.ko).toLocaleString(lang==='de'?'de-DE':'en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Berlin'});
+    // Check if game is today (local timezone)
+    const now = new Date();
+    const gDate = new Date(g.ko);
+    const isToday = gDate.getFullYear()===now.getFullYear() && gDate.getMonth()===now.getMonth() && gDate.getDate()===now.getDate();
+    const todayBadge = isToday && !isDone ? `<span class="today-badge">${lang==='de'?'Heute':'Today'}</span>` : '';
     const status = isLive ? `<span class="game-status live">● LIVE</span>` : isDone ? `<span class="game-status finished">✓ Beendet</span>` : locked ? `<span class="game-status locked">🔒 Gesperrt</span>` : `<span class="game-status upcoming">${koFmt}</span>`;
     const ptsHtml = pts!==null ? `<span class="pts-badge pts-${pts}">${pts} Pkt</span>` : '';
     const sc = isLive ? 'live-score' : 'result';
@@ -504,10 +511,10 @@ function renderGames() {
       }).filter(Boolean).join('');
       if(pills) others = `<div class="others-tips"><span class="tipp-label">${lang==='de'?'Andere:':'Others:'}</span>${pills}</div>`;
     }
-    return `<div class="game-card" style="border-color:${color}22;">
+    return `<div class="game-card${isToday?' today':''}" style="border-color:${color}22;">
       <div class="game-card-header">
         <div class="grp-pill" style="background:${color}22;color:${color}">${labelText}</div>
-        <div class="game-meta">${cName}</div>${status}
+        <div class="game-meta">${cName}</div>${status}${todayBadge}
       </div>
       <div class="game-body">
         <div class="team-block"><div class="team-flag">${flag(hName)}</div><div class="team-name">${hName}</div></div>
