@@ -234,6 +234,15 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
         <button class="onboard-btn" onclick="changeName()">✓ Name speichern</button>
         <div class="error-msg" id="profil-error"></div>
       </div>
+      <div class="rule-card">
+        <div style="font-weight:600;font-size:16px;margin-bottom:4px;">📋 Tipps Massenimport</div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+          Falls Tipps verloren gingen: Pro Zeile ein Tipp im Format <strong style="color:var(--text);">SpielNr:Heim:Auswärts</strong> (z.B. <strong style="color:var(--text);">25:7:1</strong>). Spielnummern siehe Tippen-Tab (oben links jede Karte zeigt die Gruppe, Reihenfolge entspricht der Anzeige). Überschreibt deine bisherigen Tipps für diese Spiele.
+        </div>
+        <textarea id="bulk-tipps" rows="6" style="width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:monospace;font-size:13px;margin-bottom:1rem;resize:vertical;" placeholder="25:7:1&#10;26:2:0&#10;27:1:1"></textarea>
+        <button class="onboard-btn" onclick="bulkImportTipps()">✓ Tipps importieren</button>
+        <div class="error-msg" id="bulk-error"></div>
+      </div>
       <div class="rule-card" style="margin-top:1rem;">
         <button onclick="logout()" style="width:100%;padding:12px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius-sm);font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">Ausloggen</button>
       </div>
@@ -352,7 +361,7 @@ let dbSha = '';
 let session = null; // {name, pin}
 let lang = localStorage.getItem('wm_lang') || 'de';
 let scheduledTimers = [];
-let saving = false;
+let saveQueue = Promise.resolve();
 
 // ══ GITHUB DB ════════════════════════════════════════════════════════
 async function ghGet() {
@@ -362,18 +371,63 @@ async function ghGet() {
   db = JSON.parse(atob(d.content.replace(/\n/g,'')));
 }
 
-async function ghSave() {
-  if(saving) return;
-  saving = true;
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(db))));
-  const r = await fetch(GH_API, {
-    method:'PUT',
-    headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-    body: JSON.stringify({message:'update data',content, sha:dbSha})
-  });
+// Fetch latest remote copy WITHOUT mutating global db/dbSha
+async function ghFetchRemote() {
+  const r = await fetch(GH_API + '?_=' + Date.now(), {headers:{'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json'}});
   const d = await r.json();
-  if(d.content) dbSha = d.content.sha;
-  saving = false;
+  return { sha: d.sha, db: JSON.parse(atob(d.content.replace(/\n/g,''))) };
+}
+
+// Queued + conflict-safe save: serializes concurrent calls, and on a 409
+// (sha mismatch) re-fetches the latest remote data, merges our local
+// changes on top (never silently dropping the current user's edits),
+// then retries. Returns true on success, false if it gave up.
+async function ghSave() {
+  const task = saveQueue.then(() => ghSaveOnce());
+  saveQueue = task.catch(() => {}); // keep queue alive even if this attempt fails
+  return task;
+}
+
+async function ghSaveOnce() {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(db))));
+      const r = await fetch(GH_API, {
+        method: 'PUT',
+        headers: {'Authorization':'token '+GH_TOKEN,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
+        body: JSON.stringify({message:'update data', content, sha: dbSha})
+      });
+      const d = await r.json();
+      if (d.content) { dbSha = d.content.sha; return true; }
+      // Conflict (sha mismatch) — merge our pending local changes onto fresh remote, then retry
+      if (d.message && /does not match|sha/i.test(d.message)) {
+        const remote = await ghFetchRemote();
+        const merged = remote.db;
+        // Merge results: union, FINISHED wins over non-finished
+        for (const gid in db.results) {
+          const local = db.results[gid], rem = merged.results[gid];
+          if (!rem || (local && local.status === 'FINISHED' && rem.status !== 'FINISHED')) merged.results[gid] = local;
+        }
+        // Merge players: union of all players; for each, union of tipps (local wins on conflicts for the active session's player)
+        for (const name in db.players) {
+          if (!merged.players[name]) { merged.players[name] = db.players[name]; continue; }
+          const localTipps = db.players[name].tipps || {};
+          const remTipps = merged.players[name].tipps || {};
+          merged.players[name].tipps = {...remTipps, ...localTipps};
+          // keep most recent pin info too
+          if (db.players[name].pin) merged.players[name].pin = db.players[name].pin;
+        }
+        db = merged;
+        dbSha = remote.sha;
+        continue; // retry with fresh sha
+      }
+      // Other error — short backoff then retry
+      await new Promise(res => setTimeout(res, 400 * (attempt+1)));
+    } catch (e) {
+      await new Promise(res => setTimeout(res, 400 * (attempt+1)));
+    }
+  }
+  return false;
 }
 
 // ══ AUTH ═════════════════════════════════════════════════════════════
@@ -573,8 +627,11 @@ async function saveTipps() {
     }
   });
   if(changed) {
-    try { await ghSave(); showToast('✓ Gespeichert!'); renderGames(); renderRangliste(); }
-    catch(e) { showToast('Fehler: '+e.message); }
+    try {
+      const ok = await ghSave();
+      if(ok) { showToast(lang==='de'?'✓ Gespeichert!':'✓ Saved!'); renderGames(); renderRangliste(); }
+      else { showToast(lang==='de'?'⚠️ Speichern fehlgeschlagen — bitte erneut versuchen':'⚠️ Save failed — please try again'); }
+    } catch(e) { showToast('Fehler: '+e.message); }
   }
   btn.disabled = false;
 }
@@ -694,7 +751,38 @@ async function changeName() {
   showToast('✓ Name geändert!');
 }
 
-// ══ LIVE RESULTS ═════════════════════════════════════════════════════
+async function bulkImportTipps() {
+  const err = document.getElementById('bulk-error');
+  err.textContent = '';
+  const raw = document.getElementById('bulk-tipps').value.trim();
+  if(!raw) { err.textContent = lang==='de'?'Bitte Tipps eingeben.':'Please enter tips.'; return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const validIds = new Set(GAMES.map(g=>g.id));
+  let count = 0;
+  const errors = [];
+  for(const line of lines) {
+    const m = line.match(/^(\d+)\s*:\s*(\d+)\s*:\s*(\d+)$/);
+    if(!m) { errors.push(line); continue; }
+    const gid = parseInt(m[1]), h = m[2], a = m[3];
+    if(!validIds.has(gid)) { errors.push(line + ' (unbekannte Spiel-Nr)'); continue; }
+    if(!db.players[session.name]) db.players[session.name] = {pin:hashPin(session.name,session.pin), tipps:{}};
+    db.players[session.name].tipps[gid] = h+':'+a;
+    count++;
+  }
+  if(count > 0) {
+    const ok = await ghSave();
+    if(ok) {
+      showToast((lang==='de'?'✓ ':'✓ ') + count + (lang==='de'?' Tipps importiert!':' tips imported!'));
+      document.getElementById('bulk-tipps').value = '';
+      renderGames(); renderRangliste();
+    } else {
+      err.textContent = lang==='de'?'Speichern fehlgeschlagen, bitte erneut versuchen.':'Save failed, please retry.';
+    }
+  }
+  if(errors.length) err.textContent = (lang==='de'?'Ungültige Zeilen: ':'Invalid lines: ') + errors.join(', ');
+}
+
+
 const FD_TOKEN = 'f91779ce91274cebb3adb09f6a219752';
 
 async function fetchResults() {
