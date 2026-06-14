@@ -84,6 +84,17 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .rank-num{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--text3);width:28px;text-align:center;}
 .rank-num.r1{color:var(--gold);}.rank-num.r2{color:#94a3b8;}.rank-num.r3{color:#b5713a;}
 .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;flex-shrink:0;}
+.standings-table{width:100%;border-collapse:collapse;font-size:13px;}
+.standings-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);padding:8px 6px;text-align:center;border-bottom:1px solid var(--border2);}
+.standings-table th:first-child{text-align:left;padding-left:10px;}
+.standings-table td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;}
+.standings-table td:first-child{text-align:left;padding-left:10px;}
+.standings-table tr.qualified td:first-child{border-left:3px solid var(--green);}
+.standings-table tr:not(.qualified) td:first-child{border-left:3px solid transparent;}
+.standings-pts{color:var(--gold);font-weight:800;}
+.group-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.group-card-header{padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:.05em;display:flex;align-items:center;gap:6px;}
+.team-cell{display:flex;align-items:center;gap:8px;}
 .save-bar{position:sticky;bottom:1rem;display:flex;justify-content:center;margin-top:1rem;}
 .save-main-btn{padding:14px 40px;background:var(--gold);color:#0a0f1e;border:none;border-radius:40px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:.05em;cursor:pointer;box-shadow:0 4px 20px rgba(240,180,41,.35);transition:all .2s;}
 .save-main-btn:hover{transform:translateY(-2px);}
@@ -157,6 +168,7 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <nav class="nav">
     <div class="nav-inner">
       <button class="nav-btn active" onclick="showScreen('tippen',this)">⚽ Tippen</button>
+      <button class="nav-btn" onclick="showScreen('gruppen',this)">📊 Gruppen</button>
       <button class="nav-btn" onclick="showScreen('rangliste',this)">🏆 Rangliste</button>
       <button class="nav-btn" onclick="showScreen('reminder',this)">🔔 Erinnerung</button>
       <button class="nav-btn" onclick="showScreen('regeln',this)">📋 Regeln</button>
@@ -174,6 +186,9 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
       <div class="podium" id="podium"></div>
       <div class="section-label">Alle Spieler</div>
       <div id="rank-list"></div>
+    </div>
+    <div id="screen-gruppen" class="screen">
+      <div id="groups-overview"></div>
     </div>
     <div id="screen-reminder" class="screen">
       <div class="section-label">🔔 Erinnerungen</div>
@@ -241,24 +256,77 @@ const flag = n => FLAGS[n] || '';
 const GAMES = [
   {id:1,grp:"A",home:"Mexiko",away:"Südafrika",homeEn:"Mexico",awayEn:"South Africa",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-06-11T19:00:00Z"},
   {id:2,grp:"A",home:"Südkorea",away:"Tschechien",homeEn:"South Korea",awayEn:"Czech Republic",city:"Guadalajara",cityEn:"Guadalajara",ko:"2026-06-12T02:00:00Z"},
-  {id:3,grp:"B",home:"Kanada",away:"Bosnien-H.",homeEn:"Canada",awayEn:"Bosnia-Herz.",city:"Toronto",cityEn:"Toronto",ko:"2026-06-12T19:00:00Z"},
-  {id:4,grp:"D",home:"USA",away:"Paraguay",homeEn:"USA",awayEn:"Paraguay",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-13T01:00:00Z"},
-  {id:5,grp:"B",home:"Katar",away:"Schweiz",homeEn:"Qatar",awayEn:"Switzerland",city:"San Francisco",cityEn:"San Francisco",ko:"2026-06-13T19:00:00Z"},
-  {id:6,grp:"C",home:"Brasilien",away:"Marokko",homeEn:"Brazil",awayEn:"Morocco",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-13T22:00:00Z"},
-  {id:7,grp:"E",home:"Deutschland",away:"Curacao",homeEn:"Germany",awayEn:"Curacao",city:"Houston",cityEn:"Houston",ko:"2026-06-14T17:00:00Z"},
-  {id:8,grp:"F",home:"Niederlande",away:"Japan",homeEn:"Netherlands",awayEn:"Japan",city:"Dallas",cityEn:"Dallas",ko:"2026-06-14T20:00:00Z"},
-  {id:9,grp:"H",home:"Spanien",away:"Kap Verde",homeEn:"Spain",awayEn:"Cape Verde",city:"Atlanta",cityEn:"Atlanta",ko:"2026-06-15T16:00:00Z"},
-  {id:10,grp:"G",home:"Belgien",away:"Ägypten",homeEn:"Belgium",awayEn:"Egypt",city:"Seattle",cityEn:"Seattle",ko:"2026-06-15T19:00:00Z"},
-  {id:11,grp:"I",home:"Frankreich",away:"Senegal",homeEn:"France",awayEn:"Senegal",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-16T19:00:00Z"},
-  {id:12,grp:"J",home:"Argentinien",away:"Algerien",homeEn:"Argentina",awayEn:"Algeria",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-17T01:00:00Z"},
-  {id:13,grp:"J",home:"Österreich",away:"Jordanien",homeEn:"Austria",awayEn:"Jordan",city:"San Francisco",cityEn:"San Francisco",ko:"2026-06-17T04:00:00Z"},
-  {id:14,grp:"K",home:"Portugal",away:"DR Kongo",homeEn:"Portugal",awayEn:"DR Congo",city:"Houston",cityEn:"Houston",ko:"2026-06-17T17:00:00Z"},
-  {id:15,grp:"L",home:"England",away:"Kroatien",homeEn:"England",awayEn:"Croatia",city:"Dallas",cityEn:"Dallas",ko:"2026-06-17T20:00:00Z"},
-  {id:16,grp:"L",home:"Ghana",away:"Panama",homeEn:"Ghana",awayEn:"Panama",city:"Toronto",cityEn:"Toronto",ko:"2026-06-17T23:00:00Z"},
-  {id:17,grp:"K",home:"Usbekistan",away:"Kolumbien",homeEn:"Uzbekistan",awayEn:"Colombia",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-06-18T02:00:00Z"},
-  {id:18,grp:"D",home:"USA",away:"Australien",homeEn:"USA",awayEn:"Australia",city:"Seattle",cityEn:"Seattle",ko:"2026-06-19T19:00:00Z"},
-  {id:19,grp:"C",home:"Schottland",away:"Marokko",homeEn:"Scotland",awayEn:"Morocco",city:"Boston",cityEn:"Boston",ko:"2026-06-19T22:00:00Z"},
-  {id:20,grp:"F",home:"Niederlande",away:"Schweden",homeEn:"Netherlands",awayEn:"Sweden",city:"Houston",cityEn:"Houston",ko:"2026-06-20T17:00:00Z"},
+  {id:3,grp:"A",home:"Tschechien",away:"Südafrika",homeEn:"Czech Republic",awayEn:"South Africa",city:"Atlanta",cityEn:"Atlanta",ko:"2026-06-18T16:00:00Z"},
+  {id:4,grp:"A",home:"Mexiko",away:"Südkorea",homeEn:"Mexico",awayEn:"South Korea",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-06-19T01:00:00Z"},
+  {id:5,grp:"A",home:"Tschechien",away:"Mexiko",homeEn:"Czech Republic",awayEn:"Mexico",city:"Guadalajara",cityEn:"Guadalajara",ko:"2026-06-25T01:00:00Z"},
+  {id:6,grp:"A",home:"Südafrika",away:"Südkorea",homeEn:"South Africa",awayEn:"South Korea",city:"Atlanta",cityEn:"Atlanta",ko:"2026-06-25T01:00:00Z"},
+  {id:7,grp:"B",home:"Kanada",away:"Bosnien-H.",homeEn:"Canada",awayEn:"Bosnia-Herz.",city:"Toronto",cityEn:"Toronto",ko:"2026-06-12T19:00:00Z"},
+  {id:8,grp:"B",home:"Katar",away:"Schweiz",homeEn:"Qatar",awayEn:"Switzerland",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-13T19:00:00Z"},
+  {id:9,grp:"B",home:"Schweiz",away:"Bosnien-H.",homeEn:"Switzerland",awayEn:"Bosnia-Herz.",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-18T19:00:00Z"},
+  {id:10,grp:"B",home:"Kanada",away:"Katar",homeEn:"Canada",awayEn:"Qatar",city:"Vancouver",cityEn:"Vancouver",ko:"2026-06-18T22:00:00Z"},
+  {id:11,grp:"B",home:"Schweiz",away:"Kanada",homeEn:"Switzerland",awayEn:"Canada",city:"Vancouver",cityEn:"Vancouver",ko:"2026-06-24T19:00:00Z"},
+  {id:12,grp:"B",home:"Bosnien-H.",away:"Katar",homeEn:"Bosnia-Herz.",awayEn:"Qatar",city:"Toronto",cityEn:"Toronto",ko:"2026-06-24T19:00:00Z"},
+  {id:13,grp:"C",home:"Brasilien",away:"Marokko",homeEn:"Brazil",awayEn:"Morocco",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-13T22:00:00Z"},
+  {id:14,grp:"C",home:"Haiti",away:"Schottland",homeEn:"Haiti",awayEn:"Scotland",city:"Boston",cityEn:"Boston",ko:"2026-06-14T01:00:00Z"},
+  {id:15,grp:"C",home:"Schottland",away:"Marokko",homeEn:"Scotland",awayEn:"Morocco",city:"Boston",cityEn:"Boston",ko:"2026-06-19T22:00:00Z"},
+  {id:16,grp:"C",home:"Brasilien",away:"Haiti",homeEn:"Brazil",awayEn:"Haiti",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-06-20T00:30:00Z"},
+  {id:17,grp:"C",home:"Schottland",away:"Brasilien",homeEn:"Scotland",awayEn:"Brazil",city:"Seattle",cityEn:"Seattle",ko:"2026-06-24T22:00:00Z"},
+  {id:18,grp:"C",home:"Marokko",away:"Haiti",homeEn:"Morocco",awayEn:"Haiti",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-24T22:00:00Z"},
+  {id:19,grp:"D",home:"USA",away:"Paraguay",homeEn:"USA",awayEn:"Paraguay",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-13T01:00:00Z"},
+  {id:20,grp:"D",home:"Australien",away:"Türkei",homeEn:"Australia",awayEn:"Turkey",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-14T04:00:00Z"},
+  {id:21,grp:"D",home:"USA",away:"Australien",homeEn:"USA",awayEn:"Australia",city:"Seattle",cityEn:"Seattle",ko:"2026-06-19T19:00:00Z"},
+  {id:22,grp:"D",home:"Türkei",away:"Paraguay",homeEn:"Turkey",awayEn:"Paraguay",city:"Seattle",cityEn:"Seattle",ko:"2026-06-20T03:00:00Z"},
+  {id:23,grp:"D",home:"Türkei",away:"USA",homeEn:"Turkey",awayEn:"USA",city:"Seattle",cityEn:"Seattle",ko:"2026-06-26T02:00:00Z"},
+  {id:24,grp:"D",home:"Paraguay",away:"Australien",homeEn:"Paraguay",awayEn:"Australia",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-26T02:00:00Z"},
+  {id:25,grp:"E",home:"Deutschland",away:"Curacao",homeEn:"Germany",awayEn:"Curacao",city:"Houston",cityEn:"Houston",ko:"2026-06-14T17:00:00Z"},
+  {id:26,grp:"E",home:"Elfenbeinküste",away:"Ecuador",homeEn:"Ivory Coast",awayEn:"Ecuador",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-06-14T23:00:00Z"},
+  {id:27,grp:"E",home:"Deutschland",away:"Elfenbeinküste",homeEn:"Germany",awayEn:"Ivory Coast",city:"Toronto",cityEn:"Toronto",ko:"2026-06-20T20:00:00Z"},
+  {id:28,grp:"E",home:"Ecuador",away:"Curacao",homeEn:"Ecuador",awayEn:"Curacao",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-21T00:00:00Z"},
+  {id:29,grp:"E",home:"Curacao",away:"Elfenbeinküste",homeEn:"Curacao",awayEn:"Ivory Coast",city:"Dallas",cityEn:"Dallas",ko:"2026-06-25T20:00:00Z"},
+  {id:30,grp:"E",home:"Ecuador",away:"Deutschland",homeEn:"Ecuador",awayEn:"Germany",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-25T20:00:00Z"},
+  {id:31,grp:"F",home:"Niederlande",away:"Japan",homeEn:"Netherlands",awayEn:"Japan",city:"Dallas",cityEn:"Dallas",ko:"2026-06-14T20:00:00Z"},
+  {id:32,grp:"F",home:"Schweden",away:"Tunesien",homeEn:"Sweden",awayEn:"Tunisia",city:"Monterrey",cityEn:"Monterrey",ko:"2026-06-15T02:00:00Z"},
+  {id:33,grp:"F",home:"Niederlande",away:"Schweden",homeEn:"Netherlands",awayEn:"Sweden",city:"Houston",cityEn:"Houston",ko:"2026-06-20T17:00:00Z"},
+  {id:34,grp:"F",home:"Tunesien",away:"Japan",homeEn:"Tunisia",awayEn:"Japan",city:"Monterrey",cityEn:"Monterrey",ko:"2026-06-21T04:00:00Z"},
+  {id:35,grp:"F",home:"Japan",away:"Schweden",homeEn:"Japan",awayEn:"Sweden",city:"Dallas",cityEn:"Dallas",ko:"2026-06-25T23:00:00Z"},
+  {id:36,grp:"F",home:"Tunesien",away:"Niederlande",homeEn:"Tunisia",awayEn:"Netherlands",city:"Houston",cityEn:"Houston",ko:"2026-06-25T23:00:00Z"},
+  {id:37,grp:"G",home:"Belgien",away:"Ägypten",homeEn:"Belgium",awayEn:"Egypt",city:"Seattle",cityEn:"Seattle",ko:"2026-06-15T19:00:00Z"},
+  {id:38,grp:"G",home:"Iran",away:"Neuseeland",homeEn:"Iran",awayEn:"New Zealand",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-16T01:00:00Z"},
+  {id:39,grp:"G",home:"Belgien",away:"Iran",homeEn:"Belgium",awayEn:"Iran",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-21T19:00:00Z"},
+  {id:40,grp:"G",home:"Neuseeland",away:"Ägypten",homeEn:"New Zealand",awayEn:"Egypt",city:"Vancouver",cityEn:"Vancouver",ko:"2026-06-22T01:00:00Z"},
+  {id:41,grp:"G",home:"Ägypten",away:"Iran",homeEn:"Egypt",awayEn:"Iran",city:"Miami",cityEn:"Miami",ko:"2026-06-27T03:00:00Z"},
+  {id:42,grp:"G",home:"Neuseeland",away:"Belgien",homeEn:"New Zealand",awayEn:"Belgium",city:"Vancouver",cityEn:"Vancouver",ko:"2026-06-27T03:00:00Z"},
+  {id:43,grp:"H",home:"Spanien",away:"Kap Verde",homeEn:"Spain",awayEn:"Cape Verde",city:"Atlanta",cityEn:"Atlanta",ko:"2026-06-15T16:00:00Z"},
+  {id:44,grp:"H",home:"Saudi-Arabien",away:"Uruguay",homeEn:"Saudi Arabia",awayEn:"Uruguay",city:"Miami",cityEn:"Miami",ko:"2026-06-15T22:00:00Z"},
+  {id:45,grp:"H",home:"Spanien",away:"Saudi-Arabien",homeEn:"Spain",awayEn:"Saudi Arabia",city:"Atlanta",cityEn:"Atlanta",ko:"2026-06-21T16:00:00Z"},
+  {id:46,grp:"H",home:"Uruguay",away:"Kap Verde",homeEn:"Uruguay",awayEn:"Cape Verde",city:"Miami",cityEn:"Miami",ko:"2026-06-21T22:00:00Z"},
+  {id:47,grp:"H",home:"Kap Verde",away:"Saudi-Arabien",homeEn:"Cape Verde",awayEn:"Saudi Arabia",city:"Houston",cityEn:"Houston",ko:"2026-06-27T00:00:00Z"},
+  {id:48,grp:"H",home:"Uruguay",away:"Spanien",homeEn:"Uruguay",awayEn:"Spain",city:"Monterrey",cityEn:"Monterrey",ko:"2026-06-27T00:00:00Z"},
+  {id:49,grp:"I",home:"Frankreich",away:"Senegal",homeEn:"France",awayEn:"Senegal",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-16T19:00:00Z"},
+  {id:50,grp:"I",home:"Irak",away:"Norwegen",homeEn:"Iraq",awayEn:"Norway",city:"Boston",cityEn:"Boston",ko:"2026-06-16T22:00:00Z"},
+  {id:51,grp:"I",home:"Frankreich",away:"Irak",homeEn:"France",awayEn:"Iraq",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-22T21:00:00Z"},
+  {id:52,grp:"I",home:"Norwegen",away:"Senegal",homeEn:"Norway",awayEn:"Senegal",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-06-23T00:00:00Z"},
+  {id:53,grp:"I",home:"Norwegen",away:"Frankreich",homeEn:"Norway",awayEn:"France",city:"Boston",cityEn:"Boston",ko:"2026-06-26T19:00:00Z"},
+  {id:54,grp:"I",home:"Senegal",away:"Irak",homeEn:"Senegal",awayEn:"Iraq",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-06-26T19:00:00Z"},
+  {id:55,grp:"J",home:"Argentinien",away:"Algerien",homeEn:"Argentina",awayEn:"Algeria",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-17T01:00:00Z"},
+  {id:56,grp:"J",home:"Österreich",away:"Jordanien",homeEn:"Austria",awayEn:"Jordan",city:"San Francisco",cityEn:"San Francisco",ko:"2026-06-17T04:00:00Z"},
+  {id:57,grp:"J",home:"Argentinien",away:"Österreich",homeEn:"Argentina",awayEn:"Austria",city:"Dallas",cityEn:"Dallas",ko:"2026-06-22T17:00:00Z"},
+  {id:58,grp:"J",home:"Jordanien",away:"Algerien",homeEn:"Jordan",awayEn:"Algeria",city:"San Francisco",cityEn:"San Francisco",ko:"2026-06-23T03:00:00Z"},
+  {id:59,grp:"J",home:"Algerien",away:"Österreich",homeEn:"Algeria",awayEn:"Austria",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-28T02:00:00Z"},
+  {id:60,grp:"J",home:"Jordanien",away:"Argentinien",homeEn:"Jordan",awayEn:"Argentina",city:"Dallas",cityEn:"Dallas",ko:"2026-06-28T02:00:00Z"},
+  {id:61,grp:"K",home:"Portugal",away:"DR Kongo",homeEn:"Portugal",awayEn:"DR Congo",city:"Houston",cityEn:"Houston",ko:"2026-06-17T17:00:00Z"},
+  {id:62,grp:"K",home:"Usbekistan",away:"Kolumbien",homeEn:"Uzbekistan",awayEn:"Colombia",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-06-18T02:00:00Z"},
+  {id:63,grp:"K",home:"Portugal",away:"Usbekistan",homeEn:"Portugal",awayEn:"Uzbekistan",city:"Houston",cityEn:"Houston",ko:"2026-06-23T17:00:00Z"},
+  {id:64,grp:"K",home:"Kolumbien",away:"DR Kongo",homeEn:"Colombia",awayEn:"DR Congo",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-06-24T02:00:00Z"},
+  {id:65,grp:"K",home:"Kolumbien",away:"Portugal",homeEn:"Colombia",awayEn:"Portugal",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-27T23:30:00Z"},
+  {id:66,grp:"K",home:"DR Kongo",away:"Usbekistan",homeEn:"DR Congo",awayEn:"Uzbekistan",city:"Kansas City",cityEn:"Kansas City",ko:"2026-06-27T23:30:00Z"},
+  {id:67,grp:"L",home:"England",away:"Kroatien",homeEn:"England",awayEn:"Croatia",city:"Dallas",cityEn:"Dallas",ko:"2026-06-17T20:00:00Z"},
+  {id:68,grp:"L",home:"Ghana",away:"Panama",homeEn:"Ghana",awayEn:"Panama",city:"Toronto",cityEn:"Toronto",ko:"2026-06-17T23:00:00Z"},
+  {id:69,grp:"L",home:"England",away:"Ghana",homeEn:"England",awayEn:"Ghana",city:"Houston",cityEn:"Houston",ko:"2026-06-23T20:00:00Z"},
+  {id:70,grp:"L",home:"Panama",away:"Kroatien",homeEn:"Panama",awayEn:"Croatia",city:"Toronto",cityEn:"Toronto",ko:"2026-06-23T23:00:00Z"},
+  {id:71,grp:"L",home:"Panama",away:"England",homeEn:"Panama",awayEn:"England",city:"Toronto",cityEn:"Toronto",ko:"2026-06-27T21:00:00Z"},
+  {id:72,grp:"L",home:"Kroatien",away:"Ghana",homeEn:"Croatia",awayEn:"Ghana",city:"Dallas",cityEn:"Dallas",ko:"2026-06-27T21:00:00Z"},
+  // ── K.O.-RUNDE
   {id:101,grp:"R32",home:"Sieger A",away:"Sieger B",homeEn:"Winner A",awayEn:"Winner B",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-28T19:00:00Z",phase:"R32"},
   {id:102,grp:"R32",home:"Sieger C",away:"Sieger F",homeEn:"Winner C",awayEn:"Winner F",city:"Houston",cityEn:"Houston",ko:"2026-06-29T17:00:00Z",phase:"R32"},
   {id:103,grp:"R32",home:"Sieger E",away:"3. Platz",homeEn:"Winner E",awayEn:"3rd Place",city:"Boston",cityEn:"Boston",ko:"2026-06-29T20:30:00Z",phase:"R32"},
@@ -368,6 +436,7 @@ function showScreen(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('screen-'+id).classList.add('active');
   if(btn) btn.classList.add('active');
+  if(id==='gruppen') renderGroupStandings();
   if(id==='rangliste') renderRangliste();
   if(id==='reminder')  renderUpcomingReminders();
   if(id==='profil')    { document.getElementById('profil-current').textContent=session?.name||''; document.getElementById('profil-name').value=''; document.getElementById('profil-pin').value=''; document.getElementById('profil-error').textContent=''; }
@@ -503,7 +572,69 @@ async function saveTipps() {
   btn.disabled = false;
 }
 
-// ══ RANGLISTE ════════════════════════════════════════════════════════
+// ══ GROUP STANDINGS ═════════════════════════════════════════════════
+function renderGroupStandings() {
+  const groups = {};
+  GAMES.filter(g => !g.phase).forEach(g => {
+    if(!groups[g.grp]) groups[g.grp] = {teams:new Set(), games:[]};
+    const h = lang==='de'?g.home:g.homeEn;
+    const a = lang==='de'?g.away:g.awayEn;
+    groups[g.grp].teams.add(h);
+    groups[g.grp].teams.add(a);
+    groups[g.grp].games.push(g);
+  });
+
+  let html = '';
+  Object.keys(groups).sort().forEach(grp => {
+    const teams = [...groups[grp].teams];
+    const table = {};
+    teams.forEach(t => table[t] = {team:t, sp:0, s:0, u:0, n:0, tore:0, gegentore:0, diff:0, pkt:0});
+
+    groups[grp].games.forEach(g => {
+      const r = db.results[g.id];
+      if(!r || r.status!=='FINISHED') return;
+      const h = lang==='de'?g.home:g.homeEn;
+      const a = lang==='de'?g.away:g.awayEn;
+      const th = table[h], ta = table[a];
+      th.sp++; ta.sp++;
+      th.tore += r.h; th.gegentore += r.a;
+      ta.tore += r.a; ta.gegentore += r.h;
+      if(r.h > r.a) { th.s++; ta.n++; th.pkt+=3; }
+      else if(r.h < r.a) { ta.s++; th.n++; ta.pkt+=3; }
+      else { th.u++; ta.u++; th.pkt++; ta.pkt++; }
+    });
+
+    const sorted = Object.values(table).map(t => ({...t, diff: t.tore-t.gegentore}))
+      .sort((x,y) => y.pkt-x.pkt || (y.diff-x.diff) || (y.tore-x.tore));
+
+    const labels = lang==='de'
+      ? {sp:'Sp',s:'S',u:'U',n:'N',tore:'Tore',diff:'Diff',pkt:'Pkt'}
+      : {sp:'P',s:'W',u:'D',n:'L',tore:'GF/GA',diff:'GD',pkt:'Pts'};
+
+    html += `<div class="group-card">
+      <div class="group-card-header" style="background:${GRP_COLORS[grp]}22;color:${GRP_COLORS[grp]};">${lang==='de'?'Gruppe':'Group'} ${grp}</div>
+      <table class="standings-table">
+        <thead><tr>
+          <th>${lang==='de'?'Team':'Team'}</th>
+          <th>${labels.sp}</th><th>${labels.s}</th><th>${labels.u}</th><th>${labels.n}</th>
+          <th>${labels.tore}</th><th>${labels.diff}</th><th>${labels.pkt}</th>
+        </tr></thead>
+        <tbody>
+          ${sorted.map((t,i) => `<tr class="${i<2?'qualified':''}">
+            <td><div class="team-cell">${flag(t.team)} ${t.team}</div></td>
+            <td>${t.sp}</td><td>${t.s}</td><td>${t.u}</td><td>${t.n}</td>
+            <td>${t.tore}:${t.gegentore}</td><td>${t.diff>0?'+':''}${t.diff}</td>
+            <td class="standings-pts">${t.pkt}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  });
+
+  document.getElementById('groups-overview').innerHTML = html;
+}
+
+
 function renderRangliste() {
   const sorted = Object.keys(db.players).map((name,i) => ({name, i, pts:getTotal(name), tc:Object.keys(db.players[name].tipps||{}).length})).sort((a,b)=>b.pts-a.pts);
   const medals = ['🥇','🥈','🥉'];
