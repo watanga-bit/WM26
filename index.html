@@ -260,7 +260,7 @@ const LOCK_MIN = 15;
 const REMIND_MIN = 30;
 const AVATAR_BG = ["#1d4ed8","#065f46","#92400e","#7c3aed","#be185d","#0e7490","#15803d","#c2410c"];
 const GRP_COLORS = {A:"#3b82f6",B:"#8b5cf6",C:"#10b981",D:"#f59e0b",E:"#ef4444",F:"#ec4899",G:"#14b8a6",H:"#6366f1",I:"#f97316",J:"#84cc16",K:"#06b6d4",L:"#a78bfa"};
-const KO_COLORS = {R32:"#3b82f6",QF:"#8b5cf6",SF:"#ef4444",FINAL:"#f0b429"};
+const KO_COLORS = {R32:"#3b82f6",Ach:"#8b5cf6",VF:"#f59e0b",HF:"#ef4444",P3:"#6b7280",FINAL:"#f0b429"};
 const FLAGS = {"Mexiko":"🇲🇽","Mexico":"🇲🇽","Südafrika":"🇿🇦","South Africa":"🇿🇦","Südkorea":"🇰🇷","South Korea":"🇰🇷","Tschechien":"🇨🇿","Czech Republic":"🇨🇿","Kanada":"🇨🇦","Canada":"🇨🇦","Bosnien-H.":"🇧🇦","Bosnia-Herz.":"🇧🇦","Katar":"🇶🇦","Qatar":"🇶🇦","Schweiz":"🇨🇭","Switzerland":"🇨🇭","Brasilien":"🇧🇷","Brazil":"🇧🇷","Marokko":"🇲🇦","Morocco":"🇲🇦","Schottland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Scotland":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","USA":"🇺🇸","Paraguay":"🇵🇾","Australien":"🇦🇺","Australia":"🇦🇺","Türkei":"🇹🇷","Turkey":"🇹🇷","Deutschland":"🇩🇪","Germany":"🇩🇪","Curacao":"🇨🇼","Elfenbeinküste":"🇨🇮","Ivory Coast":"🇨🇮","Ecuador":"🇪🇨","Niederlande":"🇳🇱","Netherlands":"🇳🇱","Japan":"🇯🇵","Schweden":"🇸🇪","Sweden":"🇸🇪","Tunesien":"🇹🇳","Tunisia":"🇹🇳","Belgien":"🇧🇪","Belgium":"🇧🇪","Ägypten":"🇪🇬","Egypt":"🇪🇬","Iran":"🇮🇷","Neuseeland":"🇳🇿","New Zealand":"🇳🇿","Spanien":"🇪🇸","Spain":"🇪🇸","Kap Verde":"🇨🇻","Cape Verde":"🇨🇻","Saudi-Arabien":"🇸🇦","Saudi Arabia":"🇸🇦","Uruguay":"🇺🇾","Frankreich":"🇫🇷","France":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Iraq":"🇮🇶","Norwegen":"🇳🇴","Norway":"🇳🇴","Argentinien":"🇦🇷","Argentina":"🇦🇷","Algerien":"🇩🇿","Algeria":"🇩🇿","Österreich":"🇦🇹","Austria":"🇦🇹","Jordanien":"🇯🇴","Jordan":"🇯🇴","Portugal":"🇵🇹","DR Kongo":"🇨🇩","DR Congo":"🇨🇩","Usbekistan":"🇺🇿","Uzbekistan":"🇺🇿","Kolumbien":"🇨🇴","Colombia":"🇨🇴","England":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Kroatien":"🇭🇷","Croatia":"🇭🇷","Ghana":"🇬🇭","Panama":"🇵🇦"};
 const flag = n => FLAGS[n] || '';
 
@@ -338,21 +338,38 @@ const GAMES = [
   {id:71,grp:"L",home:"Panama",away:"England",homeEn:"Panama",awayEn:"England",city:"Toronto",cityEn:"Toronto",ko:"2026-06-27T21:00:00Z"},
   {id:72,grp:"L",home:"Kroatien",away:"Ghana",homeEn:"Croatia",awayEn:"Ghana",city:"Dallas",cityEn:"Dallas",ko:"2026-06-27T21:00:00Z"},
   // ── K.O.-RUNDE
-  {id:101,grp:"R32",home:"Sieger A",away:"Sieger B",homeEn:"Winner A",awayEn:"Winner B",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-28T19:00:00Z",phase:"R32"},
-  {id:102,grp:"R32",home:"Sieger C",away:"Sieger F",homeEn:"Winner C",awayEn:"Winner F",city:"Houston",cityEn:"Houston",ko:"2026-06-29T17:00:00Z",phase:"R32"},
-  {id:103,grp:"R32",home:"Sieger E",away:"3. Platz",homeEn:"Winner E",awayEn:"3rd Place",city:"Boston",cityEn:"Boston",ko:"2026-06-29T20:30:00Z",phase:"R32"},
-  {id:104,grp:"R32",home:"Sieger I",away:"3. Platz",homeEn:"Winner I",awayEn:"3rd Place",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-30T01:00:00Z",phase:"R32"},
-  {id:105,grp:"R32",home:"Sieger D",away:"Sieger G",homeEn:"Winner D",awayEn:"Winner G",city:"Dallas",cityEn:"Dallas",ko:"2026-07-01T19:00:00Z",phase:"R32"},
-  {id:106,grp:"R32",home:"Sieger H",away:"Sieger J",homeEn:"Winner H",awayEn:"Winner J",city:"Miami",cityEn:"Miami",ko:"2026-07-02T01:00:00Z",phase:"R32"},
-  {id:107,grp:"R32",home:"Sieger K",away:"Sieger L",homeEn:"Winner K",awayEn:"Winner L",city:"Kansas City",cityEn:"Kansas City",ko:"2026-07-03T19:00:00Z",phase:"R32"},
-  {id:108,grp:"R32",home:"Sieger B",away:"3. Platz",homeEn:"Winner B",awayEn:"3rd Place",city:"Vancouver",cityEn:"Vancouver",ko:"2026-07-04T01:00:00Z",phase:"R32"},
-  {id:201,grp:"QF",home:"AF-Sieger 1",away:"AF-Sieger 2",homeEn:"R16 Winner 1",awayEn:"R16 Winner 2",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-07-04T19:00:00Z",phase:"QF"},
-  {id:202,grp:"QF",home:"AF-Sieger 3",away:"AF-Sieger 4",homeEn:"R16 Winner 3",awayEn:"R16 Winner 4",city:"Atlanta",cityEn:"Atlanta",ko:"2026-07-05T19:00:00Z",phase:"QF"},
-  {id:203,grp:"QF",home:"AF-Sieger 5",away:"AF-Sieger 6",homeEn:"R16 Winner 5",awayEn:"R16 Winner 6",city:"Dallas",cityEn:"Dallas",ko:"2026-07-06T19:00:00Z",phase:"QF"},
-  {id:204,grp:"QF",home:"AF-Sieger 7",away:"AF-Sieger 8",homeEn:"R16 Winner 7",awayEn:"R16 Winner 8",city:"Boston",cityEn:"Boston",ko:"2026-07-07T19:00:00Z",phase:"QF"},
-  {id:301,grp:"SF",home:"VF-Sieger 1",away:"VF-Sieger 2",homeEn:"QF Winner 1",awayEn:"QF Winner 2",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-14T19:00:00Z",phase:"SF"},
-  {id:302,grp:"SF",home:"VF-Sieger 3",away:"VF-Sieger 4",homeEn:"QF Winner 3",awayEn:"QF Winner 4",city:"Dallas",cityEn:"Dallas",ko:"2026-07-15T19:00:00Z",phase:"SF"},
-  {id:401,grp:"FINAL",home:"HF-Sieger 1",away:"HF-Sieger 2",homeEn:"SF Winner 1",awayEn:"SF Winner 2",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-19T19:00:00Z",phase:"FINAL"},
+  {id:73,grp:"R32",home:"Südafrika",away:"Kanada",homeEn:"South Africa",awayEn:"Canada",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-06-28T19:00:00Z",phase:"R32"},
+  {id:74,grp:"R32",home:"Deutschland",away:"Paraguay",homeEn:"Germany",awayEn:"Paraguay",city:"Boston",cityEn:"Boston",ko:"2026-06-29T20:30:00Z",phase:"R32"},
+  {id:75,grp:"R32",home:"Niederlande",away:"Marokko",homeEn:"Netherlands",awayEn:"Morocco",city:"Monterrey",cityEn:"Monterrey",ko:"2026-06-30T00:00:00Z",phase:"R32"},
+  {id:76,grp:"R32",home:"Brasilien",away:"Japan",homeEn:"Brazil",awayEn:"Japan",city:"Houston",cityEn:"Houston",ko:"2026-06-29T17:00:00Z",phase:"R32"},
+  {id:77,grp:"R32",home:"Frankreich",away:"Schweden",homeEn:"France",awayEn:"Sweden",city:"New Jersey",cityEn:"New Jersey",ko:"2026-06-30T21:00:00Z",phase:"R32"},
+  {id:78,grp:"R32",home:"Elfenbeinküste",away:"Norwegen",homeEn:"Ivory Coast",awayEn:"Norway",city:"Dallas",cityEn:"Dallas",ko:"2026-06-30T17:00:00Z",phase:"R32"},
+  {id:79,grp:"R32",home:"Mexiko",away:"Ecuador",homeEn:"Mexico",awayEn:"Ecuador",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-07-01T00:00:00Z",phase:"R32"},
+  {id:80,grp:"R32",home:"England",away:"DR Kongo",homeEn:"England",awayEn:"DR Congo",city:"Atlanta",cityEn:"Atlanta",ko:"2026-07-01T16:00:00Z",phase:"R32"},
+  {id:81,grp:"R32",home:"Belgien",away:"Senegal",homeEn:"Belgium",awayEn:"Senegal",city:"Seattle",cityEn:"Seattle",ko:"2026-07-01T20:00:00Z",phase:"R32"},
+  {id:82,grp:"R32",home:"USA",away:"Bosnien-H.",homeEn:"USA",awayEn:"Bosnia-Herz.",city:"San Francisco",cityEn:"San Francisco",ko:"2026-07-02T00:00:00Z",phase:"R32"},
+  {id:83,grp:"R32",home:"Spanien",away:"Österreich",homeEn:"Spain",awayEn:"Austria",city:"Los Angeles",cityEn:"Los Angeles",ko:"2026-07-02T19:00:00Z",phase:"R32"},
+  {id:84,grp:"R32",home:"Portugal",away:"Kroatien",homeEn:"Portugal",awayEn:"Croatia",city:"Toronto",cityEn:"Toronto",ko:"2026-07-02T23:00:00Z",phase:"R32"},
+  {id:85,grp:"R32",home:"Schweiz",away:"Algerien",homeEn:"Switzerland",awayEn:"Algeria",city:"Vancouver",cityEn:"Vancouver",ko:"2026-07-03T03:00:00Z",phase:"R32"},
+  {id:86,grp:"R32",home:"Argentinien",away:"Kap Verde",homeEn:"Argentina",awayEn:"Cape Verde",city:"Miami",cityEn:"Miami",ko:"2026-07-04T00:00:00Z",phase:"R32"},
+  {id:87,grp:"R32",home:"Kolumbien",away:"Ghana",homeEn:"Colombia",awayEn:"Ghana",city:"Kansas City",cityEn:"Kansas City",ko:"2026-07-04T03:30:00Z",phase:"R32"},
+  {id:88,grp:"R32",home:"Australien",away:"Ägypten",homeEn:"Australia",awayEn:"Egypt",city:"Dallas",cityEn:"Dallas",ko:"2026-07-03T18:00:00Z",phase:"R32"},
+  {id:89,grp:"R16",home:"Sieger S73",away:"Sieger S75",homeEn:"Winner R32-73",awayEn:"Winner R32-75",city:"Houston",cityEn:"Houston",ko:"2026-07-04T17:00:00Z",phase:"R16"},
+  {id:90,grp:"Ach",home:"Sieger S74",away:"Sieger S77",homeEn:"Winner R32-74",awayEn:"Winner R32-77",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-07-04T21:00:00Z",phase:"Ach"},
+  {id:91,grp:"Ach",home:"Sieger S76",away:"Sieger S78",homeEn:"Winner R32-76",awayEn:"Winner R32-78",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-05T20:00:00Z",phase:"Ach"},
+  {id:92,grp:"Ach",home:"Sieger S79",away:"Sieger S80",homeEn:"Winner R32-79",awayEn:"Winner R32-80",city:"Mexiko-Stadt",cityEn:"Mexico City",ko:"2026-07-06T00:00:00Z",phase:"Ach"},
+  {id:93,grp:"Ach",home:"Sieger S83",away:"Sieger S84",homeEn:"Winner R32-83",awayEn:"Winner R32-84",city:"Dallas",cityEn:"Dallas",ko:"2026-07-06T19:00:00Z",phase:"Ach"},
+  {id:94,grp:"Ach",home:"Sieger S81",away:"Sieger S82",homeEn:"Winner R32-81",awayEn:"Winner R32-82",city:"Seattle",cityEn:"Seattle",ko:"2026-07-06T23:00:00Z",phase:"Ach"},
+  {id:95,grp:"Ach",home:"Sieger S85",away:"Sieger S86",homeEn:"Winner R32-85",awayEn:"Winner R32-86",city:"Vancouver",cityEn:"Vancouver",ko:"2026-07-07T18:00:00Z",phase:"Ach"},
+  {id:96,grp:"Ach",home:"Sieger S87",away:"Sieger S88",homeEn:"Winner R32-87",awayEn:"Winner R32-88",city:"Kansas City",cityEn:"Kansas City",ko:"2026-07-07T22:00:00Z",phase:"Ach"},
+  {id:97,grp:"VF",home:"Sieger S90",away:"Sieger S91",homeEn:"Winner R16-90",awayEn:"Winner R16-91",city:"Philadelphia",cityEn:"Philadelphia",ko:"2026-07-09T21:00:00Z",phase:"VF"},
+  {id:98,grp:"VF",home:"Sieger S89",away:"Sieger S92",homeEn:"Winner R16-89",awayEn:"Winner R16-92",city:"Houston",cityEn:"Houston",ko:"2026-07-10T17:00:00Z",phase:"VF"},
+  {id:99,grp:"VF",home:"Sieger S93",away:"Sieger S94",homeEn:"Winner R16-93",awayEn:"Winner R16-94",city:"Dallas",cityEn:"Dallas",ko:"2026-07-10T21:00:00Z",phase:"VF"},
+  {id:100,grp:"VF",home:"Sieger S95",away:"Sieger S96",homeEn:"Winner R16-95",awayEn:"Winner R16-96",city:"Seattle",cityEn:"Seattle",ko:"2026-07-11T21:00:00Z",phase:"VF"},
+  {id:101,grp:"HF",home:"Sieger S97",away:"Sieger S98",homeEn:"Winner QF-97",awayEn:"Winner QF-98",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-14T21:00:00Z",phase:"HF"},
+  {id:102,grp:"HF",home:"Sieger S99",away:"Sieger S100",homeEn:"Winner QF-99",awayEn:"Winner QF-100",city:"Dallas",cityEn:"Dallas",ko:"2026-07-15T21:00:00Z",phase:"HF"},
+  {id:103,grp:"P3",home:"Verlierer HF1",away:"Verlierer HF2",homeEn:"SF Loser 1",awayEn:"SF Loser 2",city:"Miami",cityEn:"Miami",ko:"2026-07-18T21:00:00Z",phase:"P3"},
+  {id:104,grp:"FINAL",home:"Sieger HF1",away:"Sieger HF2",homeEn:"SF Winner 1",awayEn:"SF Winner 2",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-19T21:00:00Z",phase:"FINAL"},
 ];
 
 // ══ STATE ════════════════════════════════════════════════════════════
@@ -599,7 +616,7 @@ function renderGames() {
     groups[grp].forEach(g => { html += renderCard(g, grp, GRP_COLORS[grp]||'#888'); });
   });
 
-  const phases = [{k:'R32',de:'Achtelfinale',en:'Round of 16'},{k:'QF',de:'Viertelfinale',en:'Quarter-Final'},{k:'SF',de:'Halbfinale',en:'Semi-Final'},{k:'FINAL',de:'🏆 Finale',en:'🏆 Final'}];
+  const phases = [{k:'R32',de:'Sechzehntelfinale',en:'Round of 32'},{k:'Ach',de:'Achtelfinale',en:'Round of 16'},{k:'VF',de:'Viertelfinale',en:'Quarter-Final'},{k:'HF',de:'Halbfinale',en:'Semi-Final'},{k:'P3',de:'Spiel um Platz 3',en:'3rd Place Match'},{k:'FINAL',de:'🏆 Finale',en:'🏆 Final'}];
   phases.forEach(ph => {
     const pg = koGames.filter(g=>g.phase===ph.k);
     if(!pg.length) return;
