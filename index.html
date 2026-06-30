@@ -25,6 +25,13 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
 .main{max-width:920px;margin:0 auto;padding:1.5rem 1rem;}
 .screen{display:none;}.screen.active{display:block;}
 .section-label{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:1.75rem 0 .85rem;border-left:3px solid var(--gold);padding-left:10px;}
+.section-label.collapsible{cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin:0.75rem 0;border-left:3px solid var(--gold);user-select:none;}
+.section-label.collapsible:hover{background:var(--bg3);}
+.section-label.collapsible .chevron{transition:transform 0.2s;font-size:13px;color:var(--text3);}
+.section-label.collapsible.open .chevron{transform:rotate(90deg);}
+.group-body{display:none;}
+.group-body.open{display:block;}
+.group-summary{font-size:11px;font-weight:600;color:var(--text3);text-transform:none;letter-spacing:0;margin-left:8px;}
 .onboard{max-width:420px;margin:3rem auto;text-align:center;padding:0 1rem;}
 .onboard-icon{font-size:56px;margin-bottom:1rem;}
 .onboard h1{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:800;margin-bottom:.5rem;}
@@ -180,6 +187,10 @@ body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-
   <div class="main">
     <div id="screen-tippen" class="screen active">
       <div class="updated-bar" id="update-bar"></div>
+      <div style="display:flex;gap:8px;margin-bottom:0.5rem;">
+        <button class="lang-btn" style="flex:1;" onclick="setAllGroups(true)" id="expand-all-btn">▼ Alle öffnen</button>
+        <button class="lang-btn" style="flex:1;" onclick="setAllGroups(false)" id="collapse-all-btn">▲ Alle schließen</button>
+      </div>
       <div id="games-list"></div>
       <div class="save-bar"><button class="save-main-btn" onclick="saveTipps()" id="save-btn">✓ Tipps speichern</button></div>
     </div>
@@ -379,6 +390,20 @@ let session = null; // {name, pin}
 let lang = localStorage.getItem('wm_lang') || 'de';
 let scheduledTimers = [];
 let saveQueue = Promise.resolve();
+// Track which group sections are expanded. Default: all collapsed since group stage is over.
+let openGroups = new Set(JSON.parse(localStorage.getItem('wm_open_groups') || '[]'));
+function toggleGroup(grp) {
+  if(openGroups.has(grp)) openGroups.delete(grp); else openGroups.add(grp);
+  localStorage.setItem('wm_open_groups', JSON.stringify([...openGroups]));
+  renderGames();
+}
+function setAllGroups(open) {
+  const allGroups = [...new Set(GAMES.filter(g=>!g.phase).map(g=>g.grp))];
+  if(open) allGroups.forEach(g=>openGroups.add(g));
+  else openGroups.clear();
+  localStorage.setItem('wm_open_groups', JSON.stringify([...openGroups]));
+  renderGames();
+}
 
 // ══ GITHUB DB ════════════════════════════════════════════════════════
 async function ghGet() {
@@ -539,7 +564,13 @@ function showToast(msg) {
   const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
   document.body.appendChild(el); setTimeout(()=>el.remove(), 2500);
 }
-function toggleLang() { lang=lang==='de'?'en':'de'; localStorage.setItem('wm_lang',lang); document.getElementById('lang-toggle').textContent=lang==='de'?'🇬🇧 EN':'🇩🇪 DE'; renderGames(); renderUpcomingReminders(); }
+function toggleLang() {
+  lang=lang==='de'?'en':'de'; localStorage.setItem('wm_lang',lang);
+  document.getElementById('lang-toggle').textContent=lang==='de'?'🇬🇧 EN':'🇩🇪 DE';
+  document.getElementById('expand-all-btn').textContent = lang==='de' ? '▼ Alle öffnen' : '▼ Expand all';
+  document.getElementById('collapse-all-btn').textContent = lang==='de' ? '▲ Alle schließen' : '▲ Collapse all';
+  renderGames(); renderUpcomingReminders();
+}
 
 // ══ RENDER GAMES ═════════════════════════════════════════════════════
 function renderGames() {
@@ -612,8 +643,18 @@ function renderGames() {
 
   let html = '';
   Object.keys(groups).sort().forEach(grp => {
-    html += `<div class="section-label">${lang==='de'?'Gruppe':'Group'} ${grp}</div>`;
-    groups[grp].forEach(g => { html += renderCard(g, grp, GRP_COLORS[grp]||'#888'); });
+    const groupGames = groups[grp];
+    const finishedCount = groupGames.filter(g => db.results[g.id]?.status==='FINISHED').length;
+    const allDone = finishedCount === groupGames.length;
+    const summary = `${finishedCount}/${groupGames.length} ${lang==='de'?'beendet':'finished'}`;
+    const isOpen = openGroups.has(grp);
+    html += `<div class="section-label collapsible${isOpen?' open':''}" onclick="toggleGroup('${grp}')">
+      <span>${lang==='de'?'Gruppe':'Group'} ${grp}<span class="group-summary">${summary}</span></span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="group-body${isOpen?' open':''}" id="group-body-${grp}">`;
+    groupGames.forEach(g => { html += renderCard(g, grp, GRP_COLORS[grp]||'#888'); });
+    html += `</div>`;
   });
 
   const phases = [{k:'R32',de:'Sechzehntelfinale',en:'Round of 32'},{k:'Ach',de:'Achtelfinale',en:'Round of 16'},{k:'VF',de:'Viertelfinale',en:'Quarter-Final'},{k:'HF',de:'Halbfinale',en:'Semi-Final'},{k:'P3',de:'Spiel um Platz 3',en:'3rd Place Match'},{k:'FINAL',de:'🏆 Finale',en:'🏆 Final'}];
@@ -925,6 +966,15 @@ async function init() {
     await ghGet();
   } catch(e) {
     console.error('Failed to load DB', e);
+  }
+  // Auto-expand groups with games today (first-ever load only)
+  if(!localStorage.getItem('wm_open_groups')) {
+    const now = new Date();
+    GAMES.filter(g=>!g.phase).forEach(g => {
+      const gd = new Date(g.ko);
+      const isToday = gd.getFullYear()===now.getFullYear() && gd.getMonth()===now.getMonth() && gd.getDate()===now.getDate();
+      if(isToday) openGroups.add(g.grp);
+    });
   }
   document.getElementById('loading').style.display = 'none';
   // Restore session
