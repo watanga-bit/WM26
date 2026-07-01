@@ -658,12 +658,61 @@ function renderGames() {
   });
 
   const phases = [{k:'R32',de:'Sechzehntelfinale',en:'Round of 32'},{k:'Ach',de:'Achtelfinale',en:'Round of 16'},{k:'VF',de:'Viertelfinale',en:'Quarter-Final'},{k:'HF',de:'Halbfinale',en:'Semi-Final'},{k:'P3',de:'Spiel um Platz 3',en:'3rd Place Match'},{k:'FINAL',de:'🏆 Finale',en:'🏆 Final'}];
+
+  // Build winner lookup: gameId -> winner team name (de/en)
+  const winnerOf = (gid) => {
+    const g = GAMES.find(x => x.id === gid);
+    if(!g) return null;
+    const r = db.results[gid];
+    if(!r || r.status !== 'FINISHED') return null;
+    const isHomeDe = r.h > r.a, isDrawDe = r.h === r.a;
+    if(isDrawDe) return null; // AET/pens needed — keep placeholder
+    return {de: r.h > r.a ? g.home : g.away, en: r.h > r.a ? g.homeEn : g.awayEn};
+  };
+  const loserOf = (gid) => {
+    const g = GAMES.find(x => x.id === gid);
+    if(!g) return null;
+    const r = db.results[gid];
+    if(!r || r.status !== 'FINISHED') return null;
+    if(r.h === r.a) return null;
+    return {de: r.h < r.a ? g.home : g.away, en: r.h < r.a ? g.homeEn : g.awayEn};
+  };
+  // Parse "Winner R32-73" / "SF Loser 1" style placeholders
+  const resolveTeam = (placeholder, isEn) => {
+    const wm = placeholder.match(/Winner R32-(\d+)/i) || placeholder.match(/Sieger S(\d+)/i);
+    if(wm) { const w = winnerOf(parseInt(wm[1])); return w ? (isEn?w.en:w.de) : placeholder; }
+    const rl = placeholder.match(/Winner R16-(\d+)/i) || placeholder.match(/Sieger AF(\d+)/i);
+    if(rl) { const w = winnerOf(parseInt(rl[1])); return w ? (isEn?w.en:w.de) : placeholder; }
+    const qf = placeholder.match(/Winner QF-(\d+)/i) || placeholder.match(/Sieger VF(\d+)/i);
+    if(qf) { const w = winnerOf(parseInt(qf[1])); return w ? (isEn?w.en:w.de) : placeholder; }
+    const sf = placeholder.match(/Winner QF-(\d+)/i) || placeholder.match(/Sieger HF(\d+)/i);
+    if(sf) { const w = winnerOf(parseInt(sf[1])); return w ? (isEn?w.en:w.de) : placeholder; }
+    const lm = placeholder.match(/SF Loser (\d+)/i) || placeholder.match(/Verlierer HF(\d+)/i);
+    if(lm) { const l = loserOf(parseInt(lm[1])); return l ? (isEn?l.en:l.de) : placeholder; }
+    return placeholder;
+  };
+
   phases.forEach(ph => {
     const pg = koGames.filter(g=>g.phase===ph.k);
     if(!pg.length) return;
     const label = lang==='de' ? ph.de : ph.en;
-    html += `<div class="section-label" style="color:${KO_COLORS[ph.k]};border-color:${KO_COLORS[ph.k]};">${label}</div>`;
-    pg.forEach(g => { html += renderCard(g, label, KO_COLORS[ph.k]); });
+    const color = KO_COLORS[ph.k];
+    const isOpen = openGroups.has('ko_'+ph.k);
+    const finishedCount = pg.filter(g=>db.results[g.id]?.status==='FINISHED').length;
+    const summary = `${finishedCount}/${pg.length} ${lang==='de'?'beendet':'finished'}`;
+    html += `<div class="section-label collapsible${isOpen?' open':''}" onclick="toggleGroup('ko_${ph.k}')" style="color:${color};border-left-color:${color};border-color:${color}44;">
+      <span>${label}<span class="group-summary">${summary}</span></span>
+      <span class="chevron">▶</span>
+    </div>
+    <div class="group-body${isOpen?' open':''}" id="group-body-ko_${ph.k}">`;
+    pg.forEach(g => {
+      // Resolve placeholder team names from results
+      const resolvedHome = resolveTeam(lang==='de'?g.home:g.homeEn, lang==='en');
+      const resolvedAway = resolveTeam(lang==='de'?g.away:g.awayEn, lang==='en');
+      const gResolved = {...g, home:resolvedHome, away:resolvedAway, homeEn:resolveTeam(g.homeEn,true), awayEn:resolveTeam(g.awayEn,true)};
+      html += renderCard(gResolved, label, color);
+    });
+    html += `</div>`;
   });
 
   document.getElementById('games-list').innerHTML = html;
@@ -974,6 +1023,11 @@ async function init() {
       const gd = new Date(g.ko);
       const isToday = gd.getFullYear()===now.getFullYear() && gd.getMonth()===now.getMonth() && gd.getDate()===now.getDate();
       if(isToday) openGroups.add(g.grp);
+    });
+    // Auto-expand KO phases with active/upcoming games
+    ['R32','Ach','VF','HF','P3','FINAL'].forEach(ph => {
+      const active = GAMES.filter(g=>g.phase===ph).some(g=>minsUntil(g.ko)>-300);
+      if(active) openGroups.add('ko_'+ph);
     });
   }
   document.getElementById('loading').style.display = 'none';
