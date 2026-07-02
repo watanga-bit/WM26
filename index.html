@@ -551,6 +551,12 @@ function calcPts(tip, result) {
   if(th-ta === ah-aa) return 2;
   const tr = x => x>0?1:x<0?-1:0;
   if(tr(th-ta) === tr(ah-aa)) return 1;
+  // PK shootout: draw after 90min but winner decided by penalties
+  if(ah===aa && result.winner) {
+    const tippedHome = th > ta;
+    const tippedAway = ta > th;
+    if((result.winner==='home' && tippedHome) || (result.winner==='away' && tippedAway)) return 1;
+  }
   return 0;
 }
 function getTotal(playerName) {
