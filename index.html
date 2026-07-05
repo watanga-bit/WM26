@@ -918,14 +918,21 @@ async function fetchResults() {
       const matches = data.matches || [];
       const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
       for(const g of needsUpdate) {
-        const gHome = g.homeEn.toLowerCase();
-        const gAway = g.awayEn.toLowerCase();
+        // Resolve placeholder names (e.g. "Winner R32-73") to real team names
+        const resolvedHome = resolveTeam(g.homeEn, true) || g.homeEn;
+        const resolvedAway = resolveTeam(g.awayEn, true) || g.awayEn;
+        if(resolvedHome.includes('Winner')||resolvedHome.includes('Sieger')) continue; // not resolved yet
+        const gHome = resolvedHome.toLowerCase();
+        const gAway = resolvedAway.toLowerCase();
         const m = matches.find(m => {
           const t1=(m.homeTeam?.name||'').toLowerCase(), t2=(m.awayTeam?.name||'').toLowerCase();
           return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
         });
         if(m && m.status==='FINISHED' && m.score?.fullTime?.home!==null) {
-          db.results[g.id] = {h:m.score.fullTime.home, a:m.score.fullTime.away, status:'FINISHED'};
+          const r = {h:m.score.fullTime.home, a:m.score.fullTime.away, status:'FINISHED'};
+          // Carry over any existing winner field (PKs)
+          if(db.results[g.id]?.winner) r.winner = db.results[g.id].winner;
+          db.results[g.id] = r;
           changed = true;
         }
       }
