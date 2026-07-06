@@ -910,61 +910,33 @@ async function fetchResults() {
   const needsUpdate = GAMES.filter(g => { const r=db.results[g.id]; return minsUntil(g.ko)<0 && (!r||r.status!=='FINISHED'); });
   if(!needsUpdate.length) return;
   let changed = false;
-  // Primary: football-data.org
   try {
-    const res = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {headers:{'X-Auth-Token':FD_TOKEN}});
-    if(res.ok) {
-      const data = await res.json();
-      const matches = data.matches || [];
-      const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
-      for(const g of needsUpdate) {
-        // Resolve placeholder names (e.g. "Winner R32-73") to real team names
-        const resolvedHome = resolveTeam(g.homeEn, true) || g.homeEn;
-        const resolvedAway = resolveTeam(g.awayEn, true) || g.awayEn;
-        if(resolvedHome.includes('Winner')||resolvedHome.includes('Sieger')) continue; // not resolved yet
-        const gHome = resolvedHome.toLowerCase();
-        const gAway = resolvedAway.toLowerCase();
-        const m = matches.find(m => {
-          const t1=(m.homeTeam?.name||'').toLowerCase(), t2=(m.awayTeam?.name||'').toLowerCase();
-          return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
-        });
-        if(m && m.status==='FINISHED' && m.score?.fullTime?.home!==null) {
-          const r = {h:m.score.fullTime.home, a:m.score.fullTime.away, status:'FINISHED'};
-          // Carry over any existing winner field (PKs)
-          if(db.results[g.id]?.winner) r.winner = db.results[g.id].winner;
-          db.results[g.id] = r;
-          changed = true;
-        }
+    const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json?_='+Date.now());
+    if(!res.ok) throw new Error();
+    const data = await res.json();
+    const matches = data.matches || [];
+    const mw = (a,b) => { const w=a.split(/[\s&.'\-]+/)[0].toLowerCase(); return w.length>2 && b.toLowerCase().includes(w); };
+    for(const g of needsUpdate) {
+      const rHome = resolveTeam(g.homeEn, true);
+      const rAway = resolveTeam(g.awayEn, true);
+      if(!rHome || rHome.includes('Winner') || rHome.includes('Sieger') || rHome.includes('SF')) continue;
+      const m = matches.find(m =>
+        (mw(rHome, m.team1||'') || mw(m.team1||'', rHome)) &&
+        (mw(rAway, m.team2||'') || mw(m.team2||'', rAway))
+      );
+      if(m && m.score && m.score.ft) {
+        const ft = m.score.ft;
+        const r = {h:ft[0], a:ft[1], status:'FINISHED'};
+        if(m.score.p) r.winner = m.score.p[0]>m.score.p[1]?'home':'away';
+        else if(m.score.et && ft[0]===ft[1]) r.winner = m.score.et[0]>m.score.et[1]?'home':'away';
+        db.results[g.id] = r;
+        changed = true;
       }
     }
   } catch(e) {}
-  // Fallback: openfootball worldcup.json (for games not yet covered above)
-  const stillMissing = GAMES.filter(g => { const r=db.results[g.id]; return minsUntil(g.ko)<0 && (!r||r.status!=='FINISHED'); });
-  if(stillMissing.length) {
-    try {
-      const res = await fetch('https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json');
-      if(res.ok) {
-        const data = await res.json();
-        const matches = data.matches || [];
-        const matchWord = (a,b) => { const w=a.split(/[\s&.-]+/)[0]; return w && b.includes(w); };
-        for(const g of stillMissing) {
-          const gHome = g.homeEn.toLowerCase();
-          const gAway = g.awayEn.toLowerCase();
-          const m = matches.find(m => {
-            const t1=(m.team1||'').toLowerCase(), t2=(m.team2||'').toLowerCase();
-            return (matchWord(gHome,t1)||matchWord(t1,gHome)) && (matchWord(gAway,t2)||matchWord(t2,gAway));
-          });
-          if(m && m.score && m.score.ft) {
-            db.results[g.id] = {h:m.score.ft[0], a:m.score.ft[1], status:'FINISHED'};
-            changed = true;
-          }
-        }
-      }
-    } catch(e) {}
-  }
   if(changed) { try { await ghSave(); renderGames(); renderRangliste(); } catch(e) {} }
   const now = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('update-bar').textContent = '✓ Aktualisiert: ' + now;
+  document.getElementById('update-bar').textContent = 'Aktualisiert: ' + now;
 }
 
 function smartRefresh() {
