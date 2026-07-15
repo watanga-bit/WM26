@@ -379,8 +379,8 @@ const GAMES = [
   {id:100,grp:"VF",home:"Argentinien",away:"Schweiz",homeEn:"Argentina",awayEn:"Switzerland",city:"Kansas City",cityEn:"Kansas City",ko:"2026-07-12T01:00:00Z",phase:"VF"},
   {id:101,grp:"HF",home:"Frankreich",away:"Spanien",homeEn:"France",awayEn:"Spain",city:"Dallas",cityEn:"Dallas",ko:"2026-07-15T19:00:00Z",phase:"HF"},
   {id:102,grp:"HF",home:"England",away:"Argentinien",homeEn:"England",awayEn:"Argentina",city:"Atlanta",cityEn:"Atlanta",ko:"2026-07-16T19:00:00Z",phase:"HF"},
-  {id:103,grp:"P3",home:"Norwegen",away:"Schweiz",homeEn:"Norway",awayEn:"Switzerland",city:"Miami",cityEn:"Miami",ko:"2026-07-18T19:00:00Z",phase:"P3"},
-  {id:104,grp:"FINAL",home:"Sieger HF1",away:"Sieger HF2",homeEn:"SF Winner 1",awayEn:"SF Winner 2",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-19T19:00:00Z",phase:"FINAL"},
+  {id:103,grp:"P3",home:"Frankreich",away:"Sieger S102-Verlierer",homeEn:"France",awayEn:"SF102 Loser",city:"Miami",cityEn:"Miami",ko:"2026-07-18T19:00:00Z",phase:"P3"},
+  {id:104,grp:"FINAL",home:"Spanien",away:"Sieger S102",homeEn:"Spain",awayEn:"Winner SF102",city:"New Jersey",cityEn:"New Jersey",ko:"2026-07-19T19:00:00Z",phase:"FINAL"},
 ];
 
 // ══ STATE ════════════════════════════════════════════════════════════
@@ -940,6 +940,11 @@ async function fetchResults() {
 }
 
 function smartRefresh() {
+  fetchResults();
+  const hasActive = GAMES.some(g=>{const m=minsUntil(g.ko);return m>-300&&m<120;});
+  setTimeout(smartRefresh, hasActive?600000:1800000);
+}
+function smartRefresh_unused() {
   const hasLive = GAMES.some(g => { const m=minsUntil(g.ko); return m>-120&&m<0; });
   if(hasLive) { fetchResults(); setTimeout(smartRefresh, 60000); }
   else { const recent = GAMES.some(g => { const m=minsUntil(g.ko); return m>-200&&m<-90; }); if(recent) fetchResults(); setTimeout(smartRefresh, 300000); }
